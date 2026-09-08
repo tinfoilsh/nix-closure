@@ -1,0 +1,46 @@
+name: Pack closure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  MODELWRAP_VERSION: v0.3.0
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24  # v31.11.1
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+
+      - name: Install modelwrap
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release download "$MODELWRAP_VERSION" -R tinfoilsh/modelwrap \
+            -p modelwrap -p SHA256SUMS -D /tmp/modelwrap
+          (cd /tmp/modelwrap && sha256sum -c SHA256SUMS)
+          sudo install -m 0755 /tmp/modelwrap/modelwrap /usr/local/bin/modelwrap
+
+      - name: Pack
+        run: ./pack.sh
+
+      - name: Report artifact reference
+        run: |
+          set -Eeuo pipefail
+          for info in output/nix/*/*.info; do
+            echo "$info: $(cat "$info")" >> "$GITHUB_STEP_SUMMARY"
+          done
