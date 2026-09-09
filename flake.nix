@@ -36,7 +36,7 @@
           # toolchain.nix demotes the loser of every collision that matters;
           # this only keeps the long tail from failing the build.
           ignoreCollisions = true;
-          paths = [ pkgs.nix ] ++ import ./toolchain.nix { inherit pkgs; };
+          paths = [ pkgs.nix ] ++ import ./toolchain.nix { inherit pkgs nixpkgs; };
         };
 
         # Pinned: the packer must be the nix the closure carries.

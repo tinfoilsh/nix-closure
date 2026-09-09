@@ -15,9 +15,11 @@ The set is wide enough to collide on shared names. `toolchain.nix` demotes the l
 
 ## Using it in the container
 
-Put `<closure>/bin` on `PATH` and source `<closure>/etc/profile.d/50-sandbox.sh`, which sets `SSL_CERT_FILE`, `LOCALE_ARCHIVE`, `TZDIR` and `LANG`. Those cannot be baked into a store path.
+The pack carries a profile, `nix/var/nix/profiles/default`, that points at the closure. It is the one name for the closure that does not carry its hash, so link `/nix/var/nix/profiles/default` in the container to it and let the image refer to that. Source `<profile>/etc/profile.d/nix-daemon.sh`, which nix ships and which puts the profile on `PATH`, and `<profile>/etc/profile.d/50-sandbox.sh`, which sets `SSL_CERT_FILE`, `LOCALE_ARCHIVE`, `TZDIR` and `LANG`. Those cannot be baked into a store path.
 
-Link `/bin/bash` and `/usr/bin/env` to the closure. Scripts hardcode both, and neither can come from the pack itself: the pack is mounted at `/nix`, so `/bin` and `/usr/bin` belong to the container's rootfs.
+Link `/bin/bash` and `/usr/bin/env` to the profile. Scripts hardcode both, and neither can come from the pack itself: the pack is mounted at `/nix`, so `/bin` and `/usr/bin` belong to the container's rootfs.
+
+`<profile>/etc/nix/registry.json` pins `nixpkgs` to the tree the pack was built from. Point `flake-registry` in `nix.conf` at it and `nix run nixpkgs#x`, `nix shell nixpkgs#x` and `nix-shell -p x` evaluate to the paths the pack already holds, so anything it carries is neither fetched nor built again. `stdenv` is in the closure for the same reason: `nix-shell -p` realises it.
 
 `rustup` is in the closure because it was asked for, but its shims resolve nothing until they have downloaded a toolchain, which the enclave has no network for. Use the nixpkgs `cargo` and `rustc` that the closure carries.
 

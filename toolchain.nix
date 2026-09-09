@@ -1,6 +1,6 @@
 # The package set the pack carries. Grouped by what an agent reaches for, so a
 # reviewer can see what a group buys before deciding whether it earns its bytes.
-{ pkgs }:
+{ pkgs, nixpkgs }:
 
 let
   inherit (pkgs) lib;
@@ -18,6 +18,20 @@ let
       export TZDIR=${pkgs.tzdata}/share/zoneinfo
       export LANG=C.UTF-8
     '';
+  };
+
+  # Pins `nixpkgs` to the tree this pack was built from, so `nix run nixpkgs#x`
+  # and `nix-shell -p x` evaluate to paths the pack already holds.
+  registry = pkgs.writeTextFile {
+    name = "sandbox-registry";
+    destination = "/etc/nix/registry.json";
+    text = builtins.toJSON {
+      version = 2;
+      flakes = [{
+        from = { type = "indirect"; id = "nixpkgs"; };
+        to = { type = "path"; path = "${nixpkgs}"; };
+      }];
+    };
   };
 
   languages = with pkgs; [
@@ -46,6 +60,7 @@ let
 
   # clang is demoted so gcc owns cc/c++/cpp; clang-tools carries clangd and
   # clang-format, which is why neither appears again under servers/formatters.
+  # stdenv has no bin/; it is here because `nix-shell -p` realises it.
   native = [
     pkgs.binutils
     pkgs.clang-tools
@@ -53,6 +68,7 @@ let
     pkgs.gnumake
     pkgs.llvm
     pkgs.pkg-config
+    pkgs.stdenv
     (lowPrio pkgs.clang)
   ];
 
@@ -186,6 +202,7 @@ let
     man-pages
     man-pages-posix
     profile
+    registry
     tzdata
   ];
 

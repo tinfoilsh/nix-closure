@@ -52,6 +52,10 @@ db="$STAGE/nix/var/nix/db"
 # follows the packer's nix.conf. The pack is only ever the read-only half.
 rm -f "$db/db.sqlite-wal" "$db/db.sqlite-shm" "$db/reserved"
 
+# The one name for the closure that does not carry its hash.
+mkdir -p "$STAGE/nix/var/nix/profiles"
+ln -s "$closure" "$STAGE/nix/var/nix/profiles/default"
+
 storeName="${closure#/nix/store/}"
 model="nix/${storeName#*-}@${storeName%%-*}"
 
