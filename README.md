@@ -7,6 +7,8 @@ Pack a Nix closure into an artifact for [modelwrap](https://github.com/tinfoilsh
 ./pack.sh .#other    # any flake attr with one output path
 ```
 
+The staged tree is a function of the closure alone. The store db is rebuilt from `nix-store --dump-db` with the nix the closure carries, which keeps copy order, substituter signatures, registration times and the staging path out of the root hash. What is left is whether the closure's own paths build bit for bit, so a verifier who substitutes them from the same cache reproduces the artifact.
+
 `.#closure` is a `buildEnv` over the set in [`toolchain.nix`](toolchain.nix): coding agents, language runtimes, language servers, checkers, formatters, data and text tools, network tools, local Postgres/MariaDB/Valkey/Garage, debuggers and profilers, a shell substrate, and the cloud CLIs. Everything comes from nixpkgs except `droid`, which Factory ships only as a prebuilt binary, and `hermes-agent`, which is built by upstream's own flake.
 
 The set is wide enough to collide on shared names. `toolchain.nix` demotes the loser where the winner matters (gcc owns `cc`, GNU parallel owns `parallel`, nixpkgs' rustc owns `rustc` over rustup's shim) and `ignoreCollisions` absorbs the rest.
