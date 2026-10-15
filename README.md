@@ -9,9 +9,46 @@ Pack a Nix closure into an artifact for [modelwrap](https://github.com/tinfoilsh
 
 The staged tree is a function of the closure alone. The store db is rebuilt from `nix-store --dump-db` with the nix the closure carries, which keeps copy order, substituter signatures, registration times and the staging path out of the root hash. What is left is whether the closure's own paths build bit for bit, so a verifier who substitutes them from the same cache reproduces the artifact.
 
-`.#closure` is a `buildEnv` over the set in [`toolchain.nix`](toolchain.nix): coding agents, language runtimes and build tools, language servers, checkers, formatters, data and text tools, network tools and a headless Chromium, local databases, web servers and queues, debuggers and profilers, a shell substrate, and the cloud and supply-chain CLIs. Everything comes from nixpkgs except `droid`, which Factory ships only as a prebuilt binary.
+`.#closure` is a `buildEnv` over the set in [`toolchain.nix`](toolchain.nix): coding agents, language runtimes and build tools, language servers, checkers, formatters, data and text tools, network tools and a desktop, local databases, web servers and queues, debuggers and profilers, a shell substrate, and the cloud and supply-chain CLIs. Most packages come from nixpkgs. The local definitions in `pkgs/` pin upstream releases for Droid, Envoy, Qdrant, and Selkies; nixGL is a locked source input evaluated with this closure's nixpkgs.
 
 The set is wide enough to collide on shared names. `toolchain.nix` demotes the loser where the winner matters (gcc owns `cc`, GNU parallel owns `parallel`, nixpkgs' rustc owns `rustc` over rustup's shim) and `ignoreCollisions` absorbs the rest.
+
+## Desktop
+
+Run `sandbox-desktop` as the sandbox user, then forward its loopback port:
+
+```sh
+ssh -N -L 6080:127.0.0.1:6080 <sandbox-ssh-alias>
+```
+
+Open `http://127.0.0.1:6080/`. The Selkies client streams the Xfce desktop and
+sound over WebSocket, so the same SSH forward carries everything. Enable Gaming
+mode in its sidebar for pointer lock and relative mouse input; Escape releases
+the pointer. Browser audio may require a click before playback starts.
+Existing `/vnc.html` bookmarks redirect to the new client.
+
+The session uses nixGL's Mesa wrapper with CPU OpenGL/EGL and Lavapipe Vulkan.
+SDL uses EGL because headless GLX does not expose the sRGB visuals some games
+require. Xorg's dummy driver supports browser-driven resizing. PulseAudio owns
+a private Unix socket and a virtual output device; ALSA defaults to that server.
+No GPU or sound device is required. Webcam and gamepad forwarding are disabled.
+Software rendering and video encoding share the CPU; the stream defaults to
+30 fps.
+
+Launch applications from the desktop so they inherit its graphics and audio
+environment. `SANDBOX_DISPLAY`, `SANDBOX_DESKTOP_PORT`, and `SANDBOX_DESKTOP_SIZE`
+select the display, port, and initial resolution. Ctrl-C or Xfce Log Out stops
+the display, streamer, and audio server. Run in tmux to keep the session after
+disconnecting SSH. The HTTP listener is loopback-only and relies on the SSH
+tunnel for authentication.
+
+Build with `nix build .#desktop`; `nix build .#selkies` also checks the native
+encoder imports and packaged web assets. Selkies is packaged locally from its
+hash-pinned native release, including the matching web client, Python
+dependencies, pixelflux, and pcmflux. It does not download dependencies at launch.
+Publishing a new full closure pack and updating the sandbox template's `repo`
+and `mwp` references are separate rollout steps; existing VMs keep their mounted
+pack until updated.
 
 ## Using it in the container
 
