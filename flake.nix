@@ -12,9 +12,21 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
-          (final: _: {
+          (final: prev: {
+            # Avro 1.12 hits GCC 16's speculative-devirtualization array-bounds warning.
+            avro-cpp = prev.avro-cpp.override { stdenv = final.gcc15Stdenv; };
+            # glibc 2.44's C23 declarations must precede TinyCThread's compatibility macros.
+            libserdes = prev.libserdes.overrideAttrs (old: {
+              # Avro 1.12's public headers assume fmt's header-only mode.
+              env.CPPFLAGS = "-DFMT_HEADER_ONLY";
+              postPatch = old.postPatch + ''
+                substituteInPlace src/tinycthread.h --replace-fail '#include <time.h>' \
+                  '#include <time.h>
+                #include <stdlib.h>
+                #undef ONCE_FLAG_INIT'
+              '';
+            });
             droid = final.callPackage ./pkgs/droid.nix { };
-            elasticsearch = final.callPackage ./pkgs/elasticsearch.nix { };
             sandbox-desktop = import ./desktop.nix { pkgs = final; };
           })
         ];

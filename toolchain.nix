@@ -495,7 +495,6 @@ let
     traefik
     pgbouncer
     mongodb
-    elasticsearch
   ];
 
   debugAndProfile = with pkgs; [
