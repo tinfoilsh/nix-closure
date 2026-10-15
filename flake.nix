@@ -3,10 +3,14 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixgl = {
+      url = "github:nix-community/nixGL";
+      flake = false;
+    };
   };
 
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, nixgl, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -29,6 +33,12 @@
             droid = final.callPackage ./pkgs/droid.nix { };
             envoy = final.callPackage ./pkgs/envoy.nix { };
             qdrant = final.callPackage ./pkgs/qdrant.nix { };
+            selkies = final.callPackage ./pkgs/selkies.nix { };
+            nixgl = import nixgl {
+              pkgs = final;
+              enable32bits = false;
+              enableIntelX86Extensions = false;
+            };
             sandbox-desktop = import ./desktop.nix { pkgs = final; };
           })
         ];
@@ -51,7 +61,7 @@
         };
 
         # Pinned: the packer must be the nix the closure carries.
-        inherit (pkgs) nix sqlite;
+        inherit (pkgs) nix sqlite selkies;
         desktop = pkgs.sandbox-desktop;
       };
     };
