@@ -494,7 +494,7 @@ let
     envoy
     traefik
     pgbouncer
-    mongodb
+    mongodb-ce
   ];
 
   debugAndProfile = with pkgs; [

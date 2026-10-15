@@ -27,6 +27,8 @@
               '';
             });
             droid = final.callPackage ./pkgs/droid.nix { };
+            envoy = final.callPackage ./pkgs/envoy.nix { };
+            qdrant = final.callPackage ./pkgs/qdrant.nix { };
             sandbox-desktop = import ./desktop.nix { pkgs = final; };
           })
         ];
