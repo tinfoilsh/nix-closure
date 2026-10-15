@@ -1,6 +1,13 @@
 # Factory publishes droid as a prebuilt bun binary inside a per-platform npm
 # package; the `droid` package is only a postinstall that picks one.
-{ lib, stdenv, fetchurl, autoPatchelfHook }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  autoPatchelfHook,
+  versionCheckHook,
+  writableTmpDirAsHomeHook,
+}:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "droid";
@@ -13,12 +20,22 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [ autoPatchelfHook ];
   buildInputs = [ stdenv.cc.cc.lib ];
+  # Stripping removes Bun's embedded application; the executable then runs Bun.
+  dontStrip = true;
 
   installPhase = ''
     runHook preInstall
     install -Dm755 bin/droid $out/bin/droid
     runHook postInstall
   '';
+
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [
+    writableTmpDirAsHomeHook
+    versionCheckHook
+  ];
+  versionCheckKeepEnvironment = [ "HOME" ];
+  versionCheckProgramArg = "--version";
 
   meta = {
     description = "Factory Droid CLI, an AI software engineering agent";
