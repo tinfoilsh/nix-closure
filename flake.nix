@@ -3,6 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # Only cacert comes from here, for CVE-2026-111943; drop once nixpkgs carries nss-cacert 3.131.1.
+    nixpkgs-cacert.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     nixgl = {
       url = "github:nix-community/nixGL";
       flake = false;
@@ -10,7 +12,12 @@
   };
 
   outputs =
-    { nixpkgs, nixgl, ... }:
+    {
+      nixpkgs,
+      nixpkgs-cacert,
+      nixgl,
+      ...
+    }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -57,7 +64,13 @@
           # toolchain.nix demotes the loser of every collision that matters;
           # this only keeps the long tail from failing the build.
           ignoreCollisions = true;
-          paths = [ pkgs.nix ] ++ import ./toolchain.nix { inherit pkgs nixpkgs; };
+          paths = [
+            pkgs.nix
+          ]
+          ++ import ./toolchain.nix {
+            inherit pkgs nixpkgs;
+            inherit (nixpkgs-cacert.legacyPackages.${system}) cacert;
+          };
         };
 
         # Pinned: the packer must be the nix the closure carries.

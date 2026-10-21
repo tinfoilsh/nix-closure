@@ -1,6 +1,10 @@
 # The package set the pack carries. Grouped by what an agent reaches for, so a
 # reviewer can see what a group buys before deciding whether it earns its bytes.
-{ pkgs, nixpkgs }:
+{
+  pkgs,
+  nixpkgs,
+  cacert,
+}:
 
 let
   inherit (pkgs) lib;
@@ -12,7 +16,7 @@ let
     name = "sandbox-profile";
     destination = "/etc/profile.d/50-sandbox.sh";
     text = ''
-      export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+      export SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
       export NIX_SSL_CERT_FILE="$SSL_CERT_FILE"
       export LOCALE_ARCHIVE=${pkgs.glibcLocales}/lib/locale/locale-archive
       export TZDIR=${pkgs.tzdata}/share/zoneinfo
