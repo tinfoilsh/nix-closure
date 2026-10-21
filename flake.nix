@@ -7,10 +7,12 @@
       url = "github:nix-community/nixGL";
       flake = false;
     };
+    # Newer trees break the toolchain build (semgrep, python3.14 test failures); take only opencode 2.
+    nixpkgs-opencode.url = "github:NixOS/nixpkgs/02c087f3fe673c9e317f206a627cb6b910336dbe";
   };
 
   outputs =
-    { nixpkgs, nixgl, ... }:
+    { nixpkgs, nixgl, nixpkgs-opencode, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -30,6 +32,7 @@
                 #undef ONCE_FLAG_INIT'
               '';
             });
+            opencode = nixpkgs-opencode.legacyPackages.${system}.opencode;
             droid = final.callPackage ./pkgs/droid.nix { };
             envoy = final.callPackage ./pkgs/envoy.nix { };
             qdrant = final.callPackage ./pkgs/qdrant.nix { };
