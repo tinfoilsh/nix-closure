@@ -9,6 +9,7 @@
       url = "github:nix-community/nixGL";
       flake = false;
     };
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs =
@@ -16,6 +17,7 @@
       nixpkgs,
       nixpkgs-cacert,
       nixgl,
+      hermes-agent,
       ...
     }:
     let
@@ -23,6 +25,7 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
+          hermes-agent.overlays.default
           (final: prev: {
             # Avro 1.12 hits GCC 16's speculative-devirtualization array-bounds warning.
             avro-cpp = prev.avro-cpp.override { stdenv = final.gcc15Stdenv; };
@@ -51,7 +54,11 @@
         ];
         config.allowUnfree = true;
         # Checkov only verifies signatures; CVE-2024-23342 affects signing and key generation.
-        config.permittedInsecurePackages = [ "python3.14-ecdsa-0.19.2" ];
+        # openclaw is flagged for prompt injection with full system access, which the sandbox contains.
+        config.permittedInsecurePackages = [
+          "python3.14-ecdsa-0.19.2"
+          "openclaw-2026.6.33"
+        ];
       };
     in
     {
