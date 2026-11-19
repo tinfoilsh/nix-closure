@@ -271,6 +271,8 @@ let
     droid
     github-copilot-cli
     goose-cli
+    hermes-agent
+    openclaw
     opencode
     pi-coding-agent
     qwen-code
